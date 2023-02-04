@@ -13,4 +13,4 @@ const startDataBase = async() : Promise<void> => {
     console.log("Database connected")
 }
 
-export { client, startDataBase}
+export { client, startDataBase }
