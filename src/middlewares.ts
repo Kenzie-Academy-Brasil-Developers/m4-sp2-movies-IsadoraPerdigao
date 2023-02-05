@@ -1,15 +1,20 @@
 import { Request, Response, NextFunction, request } from "express"
+import { QueryConfig } from "pg"
 import { client } from "./database"
 
 const validateNewMovie = async (request: Request, response: Response, next: NextFunction) => {
     const movieName = request.body.name
     const query: string = `
-        SELECT name FROM movies WHERE name = '${movieName}';
+        SELECT name FROM movies WHERE name = $1;
     ` 
-    const queryResult = await client.query(query)
+    const queryConfig : QueryConfig= {
+        text: query,
+        values: [movieName]
+    }
+    const queryResult = await client.query(queryConfig)
     const movieOnDB = queryResult.rows
 
-    if(movieOnDB) {
+    if(movieOnDB.length > 0) {
         return response.status(409).json({
             message: "Movie already exists."
         })
