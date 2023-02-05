@@ -1,4 +1,5 @@
 import { request, Request, Response } from "express";
+import { QueryConfig } from "pg";
 import format, { string } from "pg-format";
 import { client } from "./database";
 import { iMovie, MovieCreate, MovieResult } from "./interfaces";
@@ -77,20 +78,36 @@ const listMovies = async (request: Request, response: Response) : Promise<Respon
     const queryParams = request.query
     const limit = parseInt(queryParams.perPage as string)
     const offset = (parseInt(queryParams.page as string) - 1) * limit
-    const sort = queryParams.sort
-    const order = queryParams.order
-    let orderClause = ""
+    let sort = queryParams.sort as string
+    let order = queryParams.order as string
     let page = queryParams.page
 
+    let query = ""
+    let values : Array<string | number> = []
+
     if(order) {
-        orderClause = `ORDER BY ${order} ${sort}`
+        order = order === "duration" ? "duration" : "price"
+
+        if(sort !== "") {
+            sort = sort === "ASC" ? "ASC" : "DESC" 
+        } 
+
+        query = `SELECT * FROM movies ORDER BY ${order} ${sort} LIMIT $1 OFFSET $2;`
+        
+        values = [ limit, offset ]
+    } else {
+        query = `
+            SELECT * FROM movies LIMIT $1 OFFSET $2;
+        `
+        values = [ limit, offset ]
     }
 
-    const query = `
-        SELECT * FROM movies ${orderClause} LIMIT ${limit} OFFSET ${offset};
-    `
+    const queryConfig: QueryConfig = {
+        text: query,
+        values: values
+    }
     
-    const queryResult = await client.query(query)
+    const queryResult: MovieResult = await client.query(queryConfig)
     
     let previousPage: string | null = parseInt(page as string) > 1 ? getPreviousPageURL(request) : null
     let nextPage: string = getNextPageURL(request)
