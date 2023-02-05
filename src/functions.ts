@@ -89,7 +89,7 @@ const listMovies = async (request: Request, response: Response) : Promise<Respon
         order = order === "duration" ? "duration" : "price"
 
         if(sort !== "") {
-            sort = sort === "ASC" ? "ASC" : "DESC" 
+            sort = sort === "asc" ? "asc" : "desc" 
         } 
 
         query = `SELECT * FROM movies ORDER BY ${order} ${sort} LIMIT $1 OFFSET $2;`
@@ -142,5 +142,40 @@ const deleteMovie = async (request: Request, response: Response) : Promise<Respo
 
     return response.status(204).send()
 }
+/*
+const partialUpdateMovie =async (request: Request, response: Response) : Promise<Response> => {
+    
+}
+*/
+const updateMovie = async (request: Request, response: Response) : Promise<Response> => {
+    const movieId = request.params.id
+    const updateData = Object.values(request.body)
+    const updateKeys = Object.keys(request.body)
 
-export { createMovie, listMovies, deleteMovie }
+    const query: string = format(
+        `
+        UPDATE  
+            movies
+        SET(%I) = ROW(%L)
+        WHERE id = $1
+        RETURNING *;
+    `,
+    updateKeys,
+    updateData)
+
+    const queryConfig: QueryConfig = {
+        text: query,
+        values: [movieId]
+    }
+    const queryResult : MovieResult = await client.query(queryConfig)
+
+    if(queryResult.rowCount === 0) {
+        return response.status(404).json({
+            message: "Movie not found!"
+        })
+    }
+
+    return response.status(200).json(queryResult.rows[0])
+}
+
+export { createMovie, listMovies, deleteMovie, updateMovie }
