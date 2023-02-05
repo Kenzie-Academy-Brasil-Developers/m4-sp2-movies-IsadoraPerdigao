@@ -82,7 +82,7 @@ const listMovies = async (request: Request, response: Response) : Promise<Respon
     let order = queryParams.order as string
     let page = queryParams.page
 
-    let query = ""
+    let query: string = ""
     let values : Array<string | number> = []
 
     if(order) {
@@ -120,4 +120,27 @@ const listMovies = async (request: Request, response: Response) : Promise<Respon
     })
 }
 
-export { createMovie, listMovies }
+const deleteMovie = async (request: Request, response: Response) : Promise<Response> => {
+    const movieId = request.params.id
+    const query: string = `
+        DELETE FROM 
+            movies
+        WHERE
+            id = $1;
+    `
+    const queryConfig: QueryConfig = {
+        text: query,
+        values: [movieId]
+    }
+    const queryResult : MovieResult = await client.query(queryConfig)
+
+    if(queryResult.rowCount === 0) {
+        return response.status(404).json({
+            message: "Movie not found!"
+        })
+    }
+
+    return response.status(204).send()
+}
+
+export { createMovie, listMovies, deleteMovie }
