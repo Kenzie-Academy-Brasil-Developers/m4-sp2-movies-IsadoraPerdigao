@@ -63,7 +63,6 @@ const parseSortParam = (request: Request, response: Response, next: NextFunction
     const validQuerys: string[] = ["ASC", "DESC"]
     let requestedSort = request.query.sort as string  
     let sort = "" 
-    requestedSort = requestedSort.toUpperCase()
     
     if(validQuerys.includes(requestedSort)) {
         sort = requestedSort
